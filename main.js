@@ -3,30 +3,56 @@ class LottoGenerator extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open' });
         this.currentTheme = localStorage.getItem('theme') || 'dark';
+        this.isAnalyzed = false;
+        this.lastSaju = null;
+        this.init();
+    }
+
+    init() {
         this.render();
+        this.applyTheme();
+    }
+
+    applyTheme() {
+        const colors = {
+            dark: {
+                bg: '#1a1c1d', card: '#2d2f31', text: '#e9ecef', muted: '#adb5bd',
+                input: '#3e4144', border: '#495057'
+            },
+            light: {
+                bg: '#f8f9fa', card: '#ffffff', text: '#212529', muted: '#6c757d',
+                input: '#ffffff', border: '#dee2e6'
+            }
+        };
+        const c = colors[this.currentTheme];
+        this.style.setProperty('--bg-color', c.bg);
+        this.style.setProperty('--card-bg', c.card);
+        this.style.setProperty('--text-color', c.text);
+        this.style.setProperty('--text-muted', c.muted);
+        this.style.setProperty('--input-bg', c.input);
+        this.style.setProperty('--input-border', c.border);
+        
+        document.body.style.backgroundColor = c.bg;
+        this.shadowRoot.querySelector('#theme-toggle').textContent = 
+            this.currentTheme === 'dark' ? '☀️ Light' : '🌙 Dark';
     }
 
     render() {
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
-                    --bg-color: ${this.currentTheme === 'dark' ? '#1a1c1d' : '#f8f9fa'};
-                    --card-bg: ${this.currentTheme === 'dark' ? '#2d2f31' : '#ffffff'};
-                    --text-color: ${this.currentTheme === 'dark' ? '#e9ecef' : '#212529'};
-                    --text-muted: ${this.currentTheme === 'dark' ? '#adb5bd' : '#6c757d'};
-                    --input-bg: ${this.currentTheme === 'dark' ? '#3e4144' : '#ffffff'};
-                    --input-border: ${this.currentTheme === 'dark' ? '#495057' : '#dee2e6'};
                     --primary-color: #f7b733;
                     --secondary-color: #fc4a1a;
                     --accent-color: #4dabf7;
                     --wood: #4caf50; --fire: #f44336; --earth: #ff9800; --metal: #9e9e9e; --water: #2196f3;
                     
                     display: block;
-                    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+                    font-family: 'Pretendard', sans-serif;
                     max-width: 800px;
                     margin: 0 auto;
                     padding: 40px 20px;
                     color: var(--text-color);
+                    transition: color 0.3s ease;
                 }
 
                 .container {
@@ -34,7 +60,7 @@ class LottoGenerator extends HTMLElement {
                     border-radius: 24px;
                     padding: 40px;
                     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-                    transition: all 0.3s ease;
+                    transition: background-color 0.3s ease;
                 }
 
                 .header {
@@ -90,40 +116,34 @@ class LottoGenerator extends HTMLElement {
 
                 .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(252, 74, 26, 0.3); }
 
+                .result-section {
+                    margin-top: 40px;
+                    padding-top: 40px;
+                    border-top: 1px solid var(--input-border);
+                }
+
                 .saju-table {
-                    display: grid;
-                    grid-template-columns: repeat(4, 1fr);
-                    gap: 10px;
-                    margin: 25px 0;
+                    display: grid; grid-template-columns: repeat(4, 1fr);
+                    gap: 10px; margin: 25px 0;
                 }
 
                 .saju-cell {
-                    background: var(--input-bg);
-                    padding: 15px 5px;
-                    border-radius: 12px;
-                    text-align: center;
-                    border: 1px solid var(--input-border);
+                    background: var(--input-bg); padding: 15px 5px;
+                    border-radius: 12px; text-align: center; border: 1px solid var(--input-border);
                 }
 
                 .cell-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; }
                 .cell-char { font-size: 1.8rem; font-weight: 900; margin: 5px 0; }
 
                 .analysis-card {
-                    background: var(--input-bg);
-                    padding: 24px;
-                    border-radius: 20px;
-                    margin-bottom: 30px;
-                    line-height: 1.7;
-                    border-left: 5px solid var(--primary-color);
+                    background: var(--input-bg); padding: 24px; border-radius: 20px;
+                    margin-bottom: 30px; line-height: 1.7; border-left: 5px solid var(--primary-color);
                     text-align: left;
                 }
 
                 .lotto-set {
-                    background: var(--input-bg);
-                    padding: 25px;
-                    border-radius: 20px;
-                    margin-bottom: 20px;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                    background: var(--input-bg); padding: 25px; border-radius: 20px;
+                    margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.05);
                 }
 
                 .lotto-row { display: flex; align-items: center; justify-content: center; gap: 12px; flex-wrap: wrap; }
@@ -138,10 +158,19 @@ class LottoGenerator extends HTMLElement {
                 .earth-bg { color: var(--earth); } .metal-bg { color: var(--metal); }
                 .water-bg { color: var(--water); }
 
-                .actions { display: flex; gap: 15px; margin-top: 30px; }
+                .actions { display: flex; gap: 15px; margin-top: 30px; flex-direction: column; }
+                .btn-row { display: flex; gap: 10px; width: 100%; }
+                
                 .secondary-btn {
                     background: var(--input-bg); color: var(--text-color); border: 2px solid var(--input-border);
                     padding: 14px; border-radius: 12px; font-weight: 600; cursor: pointer; flex: 1;
+                    transition: all 0.2s;
+                }
+                
+                .reset-btn {
+                    background: transparent; color: var(--text-muted); border: 1px solid var(--input-border);
+                    padding: 10px; border-radius: 12px; font-size: 0.9rem; cursor: pointer;
+                    margin-top: 20px; width: 100%;
                 }
 
                 @media (max-width: 600px) {
@@ -153,17 +182,20 @@ class LottoGenerator extends HTMLElement {
             <div class="container">
                 <div class="header">
                     <h1>명리(命理) 로또</h1>
-                    <button class="toggle-btn" id="theme-toggle">${this.currentTheme === 'dark' ? '☀️ Light' : '🌙 Dark'}</button>
+                    <div class="theme-toggle">
+                        <button class="toggle-btn" id="theme-toggle"></button>
+                    </div>
                 </div>
 
-                <div class="input-grid">
-                    <div class="form-group"><label>생년월일</label><input type="date" id="birthdate" value="1990-01-01"></div>
-                    <div class="form-group"><label>태어난 시간</label><input type="time" id="birthtime" value="12:00"></div>
-                    <div class="form-group"><label>성별</label><select id="gender"><option value="male">남성</option><option value="female">여성</option></select></div>
-                    <div class="form-group"><label>생성 개수</label><select id="set-count"><option value="1">1세트</option><option value="3">3세트</option><option value="5" selected>5세트</option></select></div>
+                <div id="input-area">
+                    <div class="input-grid">
+                        <div class="form-group"><label>생년월일</label><input type="date" id="birthdate" value="1990-01-01"></div>
+                        <div class="form-group"><label>태어난 시간</label><input type="time" id="birthtime" value="12:00"></div>
+                        <div class="form-group"><label>성별</label><select id="gender"><option value="male">남성</option><option value="female">여성</option></select></div>
+                        <div class="form-group"><label>생성 개수</label><select id="set-count"><option value="1">1세트</option><option value="3">3세트</option><option value="5" selected>5세트</option></select></div>
+                    </div>
+                    <button class="generate-btn" id="main-generate">운세 분석 및 번호 추출</button>
                 </div>
-                
-                <button class="generate-btn" id="main-generate">운세 분석 및 번호 추출</button>
 
                 <div id="result-area" style="display: none;" class="result-section">
                     <div class="analysis-card">
@@ -173,36 +205,46 @@ class LottoGenerator extends HTMLElement {
                     </div>
 
                     <div id="lotto-sets-container"></div>
-                    <div class="actions"><button class="secondary-btn" id="regenerate-btn">기운 재조합 번호 생성</button></div>
+                    
+                    <div class="actions">
+                        <div class="btn-row">
+                            <button class="secondary-btn" id="regenerate-btn">기운 재조합 번호 생성</button>
+                        </div>
+                        <button class="reset-btn" id="home-btn">↩ 처음 화면으로 (정보 초기화)</button>
+                    </div>
                 </div>
             </div>
         `;
 
         this.setupEventListeners();
-        this.updateBodyBackground();
     }
 
     setupEventListeners() {
+        this.inputArea = this.shadowRoot.querySelector('#input-area');
         this.resultArea = this.shadowRoot.querySelector('#result-area');
         this.sajuText = this.shadowRoot.querySelector('#saju-text');
         this.sajuTable = this.shadowRoot.querySelector('#saju-table');
         this.setsContainer = this.shadowRoot.querySelector('#lotto-sets-container');
-        this.generateBtn = this.shadowRoot.querySelector('#main-generate');
-        this.regenerateBtn = this.shadowRoot.querySelector('#regenerate-btn');
+        
+        this.shadowRoot.querySelector('#main-generate').addEventListener('click', () => this.handleGenerate(true));
+        this.shadowRoot.querySelector('#regenerate-btn').addEventListener('click', () => this.handleGenerate(false));
         this.shadowRoot.querySelector('#theme-toggle').addEventListener('click', () => this.toggleTheme());
-
-        this.generateBtn.addEventListener('click', () => this.handleGenerate(true));
-        this.regenerateBtn.addEventListener('click', () => this.handleGenerate(false));
+        this.shadowRoot.querySelector('#home-btn').addEventListener('click', () => this.resetToHome());
     }
 
     toggleTheme() {
         this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
         localStorage.setItem('theme', this.currentTheme);
-        this.render();
+        this.applyTheme();
     }
 
-    updateBodyBackground() {
-        document.body.style.backgroundColor = this.currentTheme === 'dark' ? '#1a1c1d' : '#f8f9fa';
+    resetToHome() {
+        this.isAnalyzed = false;
+        this.lastSaju = null;
+        this.resultArea.style.display = 'none';
+        this.inputArea.style.display = 'block';
+        this.shadowRoot.querySelector('#birthdate').value = '1990-01-01';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     handleGenerate(isNewAnalysis) {
@@ -217,6 +259,7 @@ class LottoGenerator extends HTMLElement {
             this.lastSaju = this.calculateDetailedSaju(date, time, gender);
             this.renderSajuTable(this.lastSaju.palja);
             this.sajuText.innerHTML = this.lastSaju.analysis;
+            this.inputArea.style.display = 'none';
         }
 
         this.displayMultipleSets(this.lastSaju.seed, setCount);
@@ -249,11 +292,8 @@ class LottoGenerator extends HTMLElement {
             { label: '연주(年)', stem: yearG.stem, branch: yearG.branch }
         ];
 
-        let analysis = `귀하의 명조는 <b>${dayG.stem}</b> 일간을 중심으로 형성되어 있습니다. `;
-        analysis += `사주에 <b>${yearG.elem}</b>의 기운이 강하게 작용하여 운세의 흐름이 돋보입니다.<br><br>`;
-        analysis += `추출된 번호들은 귀하의 명리학적 기운을 보강하도록 조합되었습니다.`;
+        let analysis = `귀하의 명조는 <b>${dayG.stem}</b> 일간을 중심으로 형성되어 있습니다. 사주에 <b>${yearG.elem}</b>의 기운이 강하게 작용하여 운세의 흐름이 돋보입니다. 추출된 번호들은 귀하의 명리학적 기운을 보강하도록 조합되었습니다.`;
 
-        // Seed must be integer
         const seed = Math.floor(year + month + day + hour + (gender === 'male' ? 7 : 3));
         return { palja, analysis, seed };
     }
@@ -279,7 +319,6 @@ class LottoGenerator extends HTMLElement {
     displayMultipleSets(baseSeed, count) {
         this.setsContainer.innerHTML = '';
         for (let i = 0; i < count; i++) {
-            // Using a unique but predictable seed for each set
             const seed = Math.floor(baseSeed + (i * 777) + (Math.random() * 1000000));
             const data = this.generateLottoNumbers(seed);
             this.renderSet(data, i + 1);
@@ -289,18 +328,11 @@ class LottoGenerator extends HTMLElement {
     generateLottoNumbers(seed) {
         const numbers = new Set();
         let s = Math.abs(Math.floor(seed)) || 1;
-        
-        // Improved LCG (Linear Congruential Generator) to ensure integers
-        const next = () => {
-            s = (s * 16807) % 2147483647;
-            return s;
-        };
-
+        const next = () => { s = (s * 16807) % 2147483647; return s; };
         while (numbers.size < 7) {
             const num = (next() % 45) + 1;
             numbers.add(Math.floor(num));
         }
-
         const arr = Array.from(numbers);
         const bonus = arr.pop();
         return { main: arr.sort((a, b) => a - b), bonus };
