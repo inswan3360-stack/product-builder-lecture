@@ -107,7 +107,6 @@ class LottoGenerator extends HTMLElement {
 
                 .cell-label { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 8px; }
                 .cell-char { font-size: 1.8rem; font-weight: 900; margin: 5px 0; }
-                .cell-element { font-size: 0.8rem; font-weight: 600; }
 
                 .analysis-card {
                     background: var(--input-bg);
@@ -236,13 +235,12 @@ class LottoGenerator extends HTMLElement {
         const branches = ["자(子)", "축(丑)", "인(寅)", "묘(卯)", "진(辰)", "사(巳)", "오(午)", "미(未)", "신(申)", "유(酉)", "술(戌)", "해(亥)"];
         const elements = ["목", "화", "토", "금", "수"];
         
-        // 간지 매핑 (Simplified but authentic feeling)
-        const getGanji = (val, mod) => ({ stem: stems[val % 10], branch: branches[val % 12], elem: elements[val % 5] });
+        const getGanji = (val) => ({ stem: stems[val % 10], branch: branches[val % 12], elem: elements[val % 5] });
 
-        const yearG = getGanji(year - 4, year - 4);
-        const monthG = getGanji(year * 12 + month + 2, month);
-        const dayG = getGanji(Math.floor(date.getTime() / (1000*60*60*24)) + 23, day);
-        const hourG = getGanji(dayG.stem === stems[0] ? hour : hour + 5, hour);
+        const yearG = getGanji(year - 4);
+        const monthG = getGanji(year * 12 + month + 2);
+        const dayG = getGanji(Math.floor(date.getTime() / (1000*60*60*24)) + 23);
+        const hourG = getGanji(dayG.stem === stems[0] ? hour : hour + 5);
 
         const palja = [
             { label: '시주(時)', stem: hourG.stem, branch: hourG.branch },
@@ -251,14 +249,13 @@ class LottoGenerator extends HTMLElement {
             { label: '연주(年)', stem: yearG.stem, branch: yearG.branch }
         ];
 
-        // Detailed Analysis Logic
         let analysis = `귀하의 명조는 <b>${dayG.stem}</b> 일간을 중심으로 형성되어 있습니다. `;
-        analysis += `사주에 <b>${yearG.elem}</b>의 기운이 강하게 작용하여 ${yearG.elem === '금' ? '결단력과 강직함' : yearG.elem === '목' ? '성장과 자비심' : '유연한 흐름'}이 돋보입니다.<br><br>`;
-        analysis += `특히 <b>${hourG.branch}</b>시의 기운이 말년운과 재물 창고를 자극하고 있어, `;
-        analysis += `작은 행운이 큰 복으로 이어지는 <b>식신생재(食神生財)</b>의 형국을 띠고 있습니다. `;
-        analysis += `오늘 추출된 번호들은 귀하의 용신(用神)인 <b>${elements[(year+day)%5]}</b> 기운을 보강하도록 조합되었습니다.`;
+        analysis += `사주에 <b>${yearG.elem}</b>의 기운이 강하게 작용하여 운세의 흐름이 돋보입니다.<br><br>`;
+        analysis += `추출된 번호들은 귀하의 명리학적 기운을 보강하도록 조합되었습니다.`;
 
-        return { palja, analysis, seed: year + month + day + hour + (gender === 'male' ? 7 : 3) };
+        // Seed must be integer
+        const seed = Math.floor(year + month + day + hour + (gender === 'male' ? 7 : 3));
+        return { palja, analysis, seed };
     }
 
     renderSajuTable(palja) {
@@ -282,7 +279,8 @@ class LottoGenerator extends HTMLElement {
     displayMultipleSets(baseSeed, count) {
         this.setsContainer.innerHTML = '';
         for (let i = 0; i < count; i++) {
-            const seed = baseSeed + (i * 777) + Math.random() * 999;
+            // Using a unique but predictable seed for each set
+            const seed = Math.floor(baseSeed + (i * 777) + (Math.random() * 1000000));
             const data = this.generateLottoNumbers(seed);
             this.renderSet(data, i + 1);
         }
@@ -290,9 +288,19 @@ class LottoGenerator extends HTMLElement {
 
     generateLottoNumbers(seed) {
         const numbers = new Set();
-        let s = seed;
-        const next = () => { s = (s * 16807) % 2147483647; return s; };
-        while (numbers.size < 7) numbers.add((next() % 45) + 1);
+        let s = Math.abs(Math.floor(seed)) || 1;
+        
+        // Improved LCG (Linear Congruential Generator) to ensure integers
+        const next = () => {
+            s = (s * 16807) % 2147483647;
+            return s;
+        };
+
+        while (numbers.size < 7) {
+            const num = (next() % 45) + 1;
+            numbers.add(Math.floor(num));
+        }
+
         const arr = Array.from(numbers);
         const bonus = arr.pop();
         return { main: arr.sort((a, b) => a - b), bonus };
