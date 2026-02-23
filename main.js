@@ -2,53 +2,95 @@ class LottoGenerator extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: 'open' });
+        this.currentTheme = localStorage.getItem('theme') || 'dark';
+        this.render();
+    }
+
+    render() {
         this.shadowRoot.innerHTML = `
             <style>
                 :host {
+                    --bg-color: ${this.currentTheme === 'dark' ? '#232526' : '#f5f5f5'};
+                    --card-bg: ${this.currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)'};
+                    --text-color: ${this.currentTheme === 'dark' ? '#f5f5f5' : '#232526'};
+                    --input-bg: ${this.currentTheme === 'dark' ? 'rgba(255, 255, 255, 0.9)' : '#fff'};
+                    --input-text: #333;
+                    --primary-color: #f7b733;
+                    --secondary-color: #fc4a1a;
+                    
                     display: block;
                     text-align: center;
                     max-width: 600px;
                     margin: 0 auto;
                     padding: 20px;
+                    transition: background-color 0.3s ease;
                 }
+
+                .theme-toggle {
+                    display: flex;
+                    justify-content: flex-end;
+                    margin-bottom: 1rem;
+                }
+
+                .toggle-btn {
+                    background: var(--card-bg);
+                    border: 1px solid var(--text-color);
+                    color: var(--text-color);
+                    padding: 0.5rem 1rem;
+                    border-radius: 20px;
+                    cursor: pointer;
+                    font-size: 0.9rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+
                 .input-section {
-                    background: rgba(255, 255, 255, 0.1);
+                    background: var(--card-bg);
                     padding: 2rem;
                     border-radius: 15px;
                     margin-bottom: 2rem;
                     backdrop-filter: blur(10px);
+                    color: var(--text-color);
                 }
+
                 .form-group {
                     margin-bottom: 1.5rem;
                     text-align: left;
                 }
+
                 label {
                     display: block;
                     margin-bottom: 0.5rem;
                     font-weight: bold;
                 }
+
                 input, select {
                     width: 100%;
                     padding: 0.8rem;
                     border-radius: 8px;
-                    border: none;
-                    background: rgba(255, 255, 255, 0.9);
-                    color: #333;
+                    border: 1px solid rgba(0,0,0,0.1);
+                    background: var(--input-bg);
+                    color: var(--input-text);
                     font-size: 1rem;
                 }
+
                 .row {
                     display: flex;
                     gap: 1rem;
                 }
+
                 .row > div {
                     flex: 1;
                 }
+
                 h1 {
                     font-size: 2.5rem;
                     margin-bottom: 1.5rem;
-                    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-                    color: #f7b733;
+                    text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+                    color: var(--primary-color);
                 }
+
                 .lotto-container {
                     display: flex;
                     flex-wrap: wrap;
@@ -56,6 +98,7 @@ class LottoGenerator extends HTMLElement {
                     gap: 0.8rem;
                     margin: 2rem 0;
                 }
+
                 .lotto-ball {
                     width: 60px;
                     height: 60px;
@@ -69,32 +112,39 @@ class LottoGenerator extends HTMLElement {
                     box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 -4px 8px rgba(0,0,0,0.3);
                     transition: transform 0.3s ease;
                 }
+
                 .bonus-ball {
-                    border: 3px solid #fff;
+                    border: 3px solid var(--text-color);
                 }
+
                 .bonus-label {
                     font-size: 1rem;
                     margin-bottom: 0.5rem;
-                    color: #fff;
+                    color: var(--text-color);
                 }
+
                 .saju-result {
-                    background: rgba(0, 0, 0, 0.3);
+                    background: rgba(0, 0, 0, 0.1);
                     padding: 1.5rem;
                     border-radius: 10px;
                     margin-top: 2rem;
                     text-align: left;
                     line-height: 1.6;
+                    color: var(--text-color);
+                    border: 1px solid var(--card-bg);
                 }
+
                 .saju-title {
-                    color: #f7b733;
+                    color: var(--primary-color);
                     font-size: 1.2rem;
                     margin-bottom: 1rem;
                     font-weight: bold;
-                    border-bottom: 1px solid rgba(247, 183, 51, 0.3);
+                    border-bottom: 1px solid var(--card-bg);
                     padding-bottom: 0.5rem;
                 }
+
                 .generate-btn {
-                    background: linear-gradient(to right, #f7b733, #fc4a1a);
+                    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
                     color: #fff;
                     border: none;
                     padding: 1rem 2rem;
@@ -105,11 +155,19 @@ class LottoGenerator extends HTMLElement {
                     width: 100%;
                     transition: transform 0.2s, box-shadow 0.2s;
                 }
+
                 .generate-btn:hover {
                     transform: translateY(-2px);
                     box-shadow: 0 6px 20px rgba(0,0,0,0.3);
                 }
             </style>
+            
+            <div class="theme-toggle">
+                <button class="toggle-btn" id="theme-toggle">
+                    ${this.currentTheme === 'dark' ? '☀️ 라이트 모드' : '🌙 다크 모드'}
+                </button>
+            </div>
+
             <h1>사주 로또 번호 생성기</h1>
             
             <div class="input-section">
@@ -145,13 +203,32 @@ class LottoGenerator extends HTMLElement {
             </div>
         `;
 
+        this.setupEventListeners();
+        this.updateBodyBackground();
+    }
+
+    setupEventListeners() {
         this.resultArea = this.shadowRoot.querySelector('#result-area');
         this.sajuText = this.shadowRoot.querySelector('#saju-text');
         this.lottoMain = this.shadowRoot.querySelector('#lotto-main');
         this.lottoBonus = this.shadowRoot.querySelector('#lotto-bonus');
         this.generateBtn = this.shadowRoot.querySelector('.generate-btn');
+        this.themeToggle = this.shadowRoot.querySelector('#theme-toggle');
 
         this.generateBtn.addEventListener('click', () => this.analyzeAndGenerate());
+        this.themeToggle.addEventListener('click', () => this.toggleTheme());
+    }
+
+    toggleTheme() {
+        this.currentTheme = this.currentTheme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', this.currentTheme);
+        this.render();
+    }
+
+    updateBodyBackground() {
+        // 호스트의 배경색을 바디에 적용 (Shadow DOM 외부 영향)
+        document.body.style.backgroundColor = this.currentTheme === 'dark' ? '#232526' : '#f5f5f5';
+        document.body.style.transition = 'background-color 0.3s ease';
     }
 
     analyzeAndGenerate() {
@@ -171,7 +248,6 @@ class LottoGenerator extends HTMLElement {
     }
 
     calculateSaju(date, time, gender) {
-        // 간단한 사주 분석 로직 (데모용)
         const dateObj = new Date(date);
         const year = dateObj.getFullYear();
         const month = dateObj.getMonth() + 1;
@@ -199,7 +275,6 @@ class LottoGenerator extends HTMLElement {
     }
 
     generateSajuNumbers(seed) {
-        // 사주 시드를 이용한 의사 난수 생성
         const numbers = new Set();
         let currentSeed = seed;
 
