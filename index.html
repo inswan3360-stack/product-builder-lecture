@@ -1,13 +1,46 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lotto Number Generator</title>
+    <title>8-Bit Pet - 다마고치 레트로</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 </head>
 <body>
-    <lotto-generator></lotto-generator>
+    <div id="game-container">
+        <div id="screen-border">
+            <div id="screen">
+                <canvas id="game-canvas" width="160" height="144"></canvas>
+                <div id="ui-overlay">
+                    <div class="stat-bar"><span class="label">HUNGER</span><div class="bar-bg"><div id="hunger-bar" class="bar"></div></div></div>
+                    <div class="stat-bar"><span class="label">HAPPY</span><div class="bar-bg"><div id="happy-bar" class="bar"></div></div></div>
+                    <div class="stat-bar"><span class="label">ENERGY</span><div class="bar-bg"><div id="energy-bar" class="bar"></div></div></div>
+                    <div id="money-display">🪙 0</div>
+                </div>
+                <div id="message-box">안녕하세요!</div>
+            </div>
+        </div>
+        
+        <div id="controls">
+            <button class="pixel-btn" id="btn-feed">🍖 먹이주기</button>
+            <button class="pixel-btn" id="btn-play">🏠 집에서 놀기</button>
+            <button class="pixel-btn" id="btn-out">🌳 외출하기</button>
+            <button class="pixel-btn" id="btn-sleep">💤 잠자기</button>
+            <button class="pixel-btn" id="btn-shop">🛒 상점</button>
+        </div>
+
+        <div id="shop-modal" class="modal" style="display: none;">
+            <div class="modal-content">
+                <h3>🛒 상점</h3>
+                <div class="shop-item">
+                    <span>고급 사료 (50G)</span>
+                    <button id="buy-food" class="pixel-btn-small">구매</button>
+                </div>
+                <button id="close-shop" class="pixel-btn-small">닫기</button>
+            </div>
+        </div>
+    </div>
     <script src="main.js"></script>
 </body>
 </html>

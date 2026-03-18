@@ -1,93 +1,181 @@
-
 :root {
-    --primary-color: #f7b733;
-    --secondary-color: #fc4a1a;
-    --dark-color: #232526;
-    --light-color: #f5f5f5;
+    --bg-color: #7c8d4c; /* GameBoy-like green */
+    --pixel-border: 4px;
+    --primary-color: #2e3b23;
+    --accent-color: #8b956d;
+    --font-main: 'Press Start 2P', cursive;
+    --vga-white: #ffffff;
+    --vga-black: #000000;
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #333;
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
-    background: linear-gradient(to right, var(--dark-color), #414345);
-    color: var(--light-color);
+    height: 100vh;
     margin: 0;
-    text-align: center;
+    font-family: var(--font-main);
+    color: var(--primary-color);
 }
 
-h1 {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-}
-
-.lotto-container {
+#game-container {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 1rem;
-    margin: 2rem 0;
+    flex-direction: column;
+    align-items: center;
 }
 
-.lotto-ball {
+#screen-border {
+    padding: 30px;
+    background-color: #555;
+    border-radius: 10px;
+    border: 8px solid #222;
+    box-shadow: 0 10px 0 #111;
+}
+
+#screen {
+    position: relative;
+    width: 320px;
+    height: 288px;
+    background-color: var(--bg-color);
+    border: 8px solid #333;
+    overflow: hidden;
+    image-rendering: pixelated;
+}
+
+#game-canvas {
+    width: 320px;
+    height: 288px;
+    display: block;
+    image-rendering: pixelated;
+}
+
+#screen::after {
+    content: " ";
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    z-index: 2;
+    background-size: 100% 2px, 3px 100%;
+    pointer-events: none;
+}
+
+#ui-overlay {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    right: 5px;
+    font-size: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 3;
+}
+
+.stat-bar {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.label { width: 60px; }
+
+.bar-bg {
     width: 80px;
-    height: 80px;
-    border-radius: 50%;
+    height: 10px;
+    background-color: #444;
+    border: 2px solid #222;
+}
+
+.bar {
+    height: 100%;
+    background-color: #c4d4a4;
+    width: 100%;
+}
+
+#money-display {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 8px;
+}
+
+#message-box {
+    position: absolute;
+    bottom: 5px;
+    left: 5px;
+    right: 5px;
+    background: rgba(139, 149, 109, 0.8);
+    border: 2px solid var(--primary-color);
+    padding: 5px;
+    font-size: 8px;
+    min-height: 20px;
+    word-break: break-all;
+}
+
+#controls {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.pixel-btn {
+    font-family: var(--font-main);
+    font-size: 10px;
+    padding: 10px;
+    border: 4px solid #000;
+    background-color: #8b956d;
+    box-shadow: inset -4px -4px 0px 0px #4e5844;
+    cursor: pointer;
+    color: #000;
+}
+
+.pixel-btn:active {
+    box-shadow: inset 4px 4px 0px 0px #4e5844;
+    padding: 12px 8px 8px 12px;
+}
+
+.pixel-btn-small {
+    font-family: var(--font-main);
+    font-size: 8px;
+    padding: 5px;
+    border: 2px solid #000;
+    background-color: #8b956d;
+    cursor: pointer;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 2rem;
-    font-weight: bold;
-    color: var(--dark-color);
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2), inset 0 -4px 8px rgba(0,0,0,0.3);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    z-index: 100;
 }
 
-.lotto-ball:hover {
-    transform: scale(1.1);
-    box-shadow: 0 8px 16px rgba(0,0,0,0.3), inset 0 -8px 16px rgba(0,0,0,0.4);
+.modal-content {
+    background-color: var(--bg-color);
+    border: 8px solid #333;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+    font-size: 10px;
 }
 
-
-.generate-btn {
-    background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
-    color: var(--dark-color);
-    border: none;
-    padding: 1rem 2rem;
-    font-size: 1.2rem;
-    font-weight: bold;
-    border-radius: 50px;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-
-.generate-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-}
-
-.generate-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-}
-
-@media (max-width: 600px) {
-    h1 {
-        font-size: 2rem;
-    }
-
-    .lotto-ball {
-        width: 60px;
-        height: 60px;
-        font-size: 1.5rem;
-    }
-
-    .generate-btn {
-        font-size: 1rem;
-        padding: 0.8rem 1.6rem;
-    }
+.shop-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
 }
